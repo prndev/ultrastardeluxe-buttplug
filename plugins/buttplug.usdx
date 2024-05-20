@@ -1,0 +1,142 @@
+--[[
+buttplug.io for UltraStar Deluxe Karaoke Game
+„Plug-in and Sing“
+
+The toy's intensity increases with the player's rating (as indicated with the small bar below the points).
+
+For reasons beyond my understanding, the relative imports can only work
+when the plugins folder is the working directory.
+
+Tested on Ubuntu 22.04 – experience on Windows may vary.
+Tested with one toy only (I only have one).
+
+Depencencies:
+
+* „ultrastardx“ built against lua5.3 (other versions may work)
+* „Intiface Central“ v2.5.5 (newer versions may work) from https://intiface.com/central/
+* „pollnet“ v0.5.1 (newer versions may work) from https://github.com/probable-basilisk/pollnet/releases/tag/v0.5.1
+* „cffi“ 0.2.3 installed via `luarocks-5.3 install cffi-lua` (newer versions may work)
+
+A different ffi module may work. However, changes may be necessary in pollnet.lua.
+]]
+
+function nop()
+end
+
+function plugin_init()
+  register('buttplug', '1.00', 'prndev', 'https://github.com/prndev')
+
+  require('math')
+  require('Usdx.Party')
+  require('Usdx.ScreenSing')
+
+  local Mode = {}
+  Mode.Name = 'Buttplug'
+  Mode.CanNonParty = true
+  Mode.CanParty = true
+  Mode.OnSing = 'Sing'
+  Mode.AfterSing = 'StopVibrations'
+
+  Usdx.Party.Register(Mode)
+
+  -- it looks like in usdx plug-ins, `require` cannot be used on module scope, 
+  -- only in plugin_init() – and it always returns nil. Henceforth, I must alias
+  -- the loaded module explicitly (this is also necessary in dependencies :o)
+  require("buttplug")
+  local buttplug = package.loaded.buttplug
+  -- do not print debug output to console by default
+  buttplug.print = nop
+  
+  -- Ask for the device list after we connect
+  table.insert(buttplug.cb.ServerInfo, function()
+    buttplug.request_device_list()
+  end)
+  -- Start scanning if the device list was empty
+  table.insert(buttplug.cb.DeviceList, function()
+    if buttplug.count_devices() == 0 then
+      buttplug.start_scanning()
+    end
+  end)
+  -- Stop scanning after the first device is found
+  table.insert(buttplug.cb.DeviceAdded, function()
+    buttplug.stop_scanning()
+  end)
+  -- Start scanning if we lose a device
+  table.insert(buttplug.cb.DeviceRemoved, function()
+    buttplug.start_scanning()
+  end)
+  buttplug.connect("ultrastar-deluxe", "ws://127.0.0.1:12345")
+
+  return true
+end
+
+-- ScreenSing.GetBeat() is a real value. When floored, it may match
+-- the integer start of the note for more than one function call
+local doneLineIndex = 0
+function isLastNoteOfLine()
+  local currentBeatInt = math.floor(ScreenSing.GetBeat())
+  local Lines = ScreenSing.GetSongLines()
+  for i = 1, #Lines do
+    local numberOfNotes = #Lines[i].Notes
+    local lastNoteOfLine = Lines[i].Notes[numberOfNotes]
+    if lastNoteOfLine.Start == currentBeatInt then
+      if doneLineIndex < currentBeatInt then
+        doneLineIndex = currentBeatInt -- store line index so we know this one is done
+        --print("Last note of line "..i.." starts now")
+        return true
+      end
+    end
+  end
+  return false
+end
+
+-- keep track of each player's minimum rating throughout the song
+-- the rating starts with 0.5 by default and I do not want to startle
+-- the player right at the start of the song
+local lowestRatings = nil
+
+function Sing()
+  local buttplug = package.loaded.buttplug
+  local err = buttplug.get_and_handle_message()
+  if err ~= nil then
+    print("buttplug error: no connection to server")
+    return true
+  end
+
+  -- change vibration intensity at the end of the screen
+  -- (approximately with rating the bar update)
+  if isLastNoteOfLine() then
+    local ratings = Usdx.ScreenSing.GetRating()
+    if lowestRatings == nil then
+      lowestRatings = ratings
+    end
+    -- record lowest ratings
+    for r = 1, #ratings do
+      lowestRatings[r] = math.min(lowestRatings[r], ratings[r])
+    end
+    
+    local teams = Party.GetTeams()
+    for t = 1, #teams do
+      -- buttplug indexes devices starting with 0, lua tables start with 1
+      -- this assumes player #1 wears buttplug #0
+      local buttplug_device_index = t-1
+      if buttplug.count_devices() > buttplug_device_index then
+        -- the intensity increases according to the rating
+        -- adjusted for each player's personal minimum rating
+        local intensity = (ratings[t]-lowestRatings[t])/(1-lowestRatings[t])
+        --print("Player "..t.." rating is "..ratings[t].." minimum is "..lowestRatings[t].." vibration intensity now is "..intensity)
+        buttplug.send_vibrate_cmd(buttplug_device_index, { math.max(intensity, 0) })
+      end
+    end
+  end
+
+  return true
+end
+
+function StopVibrations()
+  local buttplug = package.loaded.buttplug
+  if buttplug.count_devices() > 0 then
+      buttplug.send_vibrate_cmd(0, { 0 })
+  end
+  return true
+end
