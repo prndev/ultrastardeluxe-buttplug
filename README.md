@@ -10,16 +10,16 @@ Tested with one toy only (I only have one).
 
 Depencencies:
 
-* „ultrastardx“ v2024.5.1 (other versions may work) built against lua5.3 (other versions may work) from https://github.com/UltraStar-Deluxe/USDX/releases/tag/v2024.5.1 
-* „Intiface Central“ v2.5.5 (newer versions may work) from https://intiface.com/central
-* „pollnet“ binary v0.5.1 (newer versions may work) from https://github.com/probable-basilisk/pollnet/releases/tag/v0.5.1
+* „ultrastardx“ built against lua5.3 (other versions may work, but must be 5.2 or newer)
+* „Intiface Central“ v2.5.5 (newer versions may work) from https://intiface.com/central/
+* „pollnet“ binary v1.1.0 (newer versions may work, use lib32 variant on Windows) from https://github.com/probable-basilisk/pollnet/releases/tag/v1.1.0
 * „cffi“ 0.2.3 installed via `luarocks-5.3 install cffi-lua` (newer versions may work)
 
 A different ffi module may work. However, changes may be necessary in pollnet.lua.
 
 This repostory includes:
 
-* „pollnet“ bindings v0.5.1 (newer versions may work) originally from https://github.com/probable-basilisk/pollnet/releases/tag/v0.5.1
+* „pollnet“ bindings v1.1.0 (newer versions may work, use lib32 variant on Windows) from https://github.com/probable-basilisk/pollnet/releases/tag/v1.1.0
 * „buttplug-lua“ 9697af1 (modified) originally from https://github.com/abbihors/buttplug-lua
 
 ### Installation
