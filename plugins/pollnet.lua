@@ -49,8 +49,7 @@ async.run(function()
 end)
 ]]
 
-require("cffi")
-local ffi = package.loaded.cffi
+local ffi = require("cffi")
 ffi.cdef[[
 struct pnctx* pollnet_init();
 struct pnctx* pollnet_get_or_init_static();
@@ -87,7 +86,8 @@ local POLLNET_RESULT_CODES = {
   [6] = "newclient"
 }
 
-local pollnet = ffi.load("./libpollnet.so")
+local _, own_path = ... -- needs at least Lua 5.2
+local pollnet = ffi.load(own_path:match("(.*"..package.config:sub(1,1)..")").."/libpollnet.so")
 local _ctx = nil
 
 local function init_ctx()

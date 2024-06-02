@@ -4,9 +4,7 @@ buttplug.io client for UltraStar Deluxe Karaoke Game
 
 The toy's intensity increases with the player's rating (as indicated with the small bar below the points).
 
-**For reasons beyond my understanding, the relative imports can only work
-when the plugins folder is the working directory.**
-
+Needs UltraDtar Deluxe v2024.8.0 or newer.  
 Tested on Ubuntu 22.04 – experience on Windows may vary.
 Tested with one toy only (I only have one).
 

@@ -24,13 +24,7 @@
 -- SOFTWARE.
 
 local json = require("json")
-if json == nil then
-    json = package.loaded.json
-end
 local pollnet = require("pollnet")
-if pollnet == nil then
-    pollnet = package.loaded.pollnet
-end
 
 local messages = {
     -- Status messages

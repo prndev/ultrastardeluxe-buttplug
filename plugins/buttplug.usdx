@@ -3,22 +3,27 @@ buttplug.io for UltraStar Deluxe Karaoke Game
 „Plug-in and Sing“
 
 The toy's intensity increases with the player's rating (as indicated with the small bar below the points).
-
-For reasons beyond my understanding, the relative imports can only work
-when the plugins folder is the working directory.
 ]]
 
 local update_interval_ms = 1000 -- adjust to your linking
+
+local toychest = {}
 
 function nop()
 end
 
 function plugin_init()
-  register('buttplug', '1.00', 'prndev', 'https://github.com/prndev')
+
+  plugin_directory = current_filename:match("(.*"..package.config:sub(1,1)..")")
+  package.path = package.path..';'..plugin_directory..'?.lua'
+
+  register('party mode: buttplug', '1.00', 'prndev', 'https://github.com/prndev')
 
   require('math')
   require('Usdx.Party')
   require('Usdx.ScreenSing')
+  -- load buttplug module and store a reference to its table as it is the custom since Lua 5.2
+  toychest.buttplug = require('buttplug')
 
   local Mode = {}
   Mode.Name = 'Buttplug'
@@ -30,11 +35,9 @@ function plugin_init()
 
   Usdx.Party.Register(Mode)
 
-  -- it looks like in usdx plug-ins, `require` cannot be used on module scope, 
-  -- only in plugin_init() – and it always returns nil. Henceforth, I must alias
-  -- the loaded module explicitly (this is also necessary in dependencies :o)
-  require("buttplug")
-  local buttplug = package.loaded.buttplug
+  -- have a local variable for convenience
+  local buttplug = toychest.buttplug
+
   -- do not print debug output to console by default
   buttplug.print = nop
   
@@ -75,7 +78,8 @@ end;
 
 local previous_ms = 0
 function Sing()
-  local buttplug = package.loaded.buttplug
+  local buttplug = toychest.buttplug
+
   local err = buttplug.get_and_handle_message()
   if err ~= nil then
     print("buttplug error: no connection to server") -- TODO: log via usdx.log
@@ -113,7 +117,7 @@ function Sing()
 end
 
 function StopVibrations()
-  local buttplug = package.loaded.buttplug
+  local buttplug = toychest.buttplug
 
   for device_index = 0, buttplug.count_devices()-1 do
       buttplug.send_vibrate_cmd(device_index, { 0 })
