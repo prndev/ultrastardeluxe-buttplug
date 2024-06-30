@@ -73,18 +73,14 @@ end
 -- ScreenSing.GetBeat() is a real value. When floored, it may match
 -- the integer start of the note for more than one function call
 local doneLineIndex = 0
-function isLastNoteOfLine()
+function nowIsStartOfLine()
   local currentBeatInt = math.floor(ScreenSing.GetBeat())
   local Lines = ScreenSing.GetSongLines()
   for i = 1, #Lines do
-    local numberOfNotes = #Lines[i].Notes
-    local lastNoteOfLine = Lines[i].Notes[numberOfNotes]
-    if lastNoteOfLine.Start == currentBeatInt then
-      if doneLineIndex < currentBeatInt then
-        doneLineIndex = currentBeatInt -- store line index so we know this one is done
-        --print("Last note of line "..i.." starts now")
-        return true
-      end
+    if Lines[i].Start == currentBeatInt and doneLineIndex < currentBeatInt then
+      doneLineIndex = currentBeatInt -- store line index so we know this one is done
+      --print("Line "..i.." starts now")
+      return true
     end
   end
   return false
@@ -103,9 +99,10 @@ function Sing()
     return true
   end
 
-  -- change vibration intensity at the end of the screen
-  -- (approximately with rating the bar update)
-  if isLastNoteOfLine() then
+  -- Change vibration intensity at the start of a line.
+  -- The rating bar for the previous line has not been updated at that time,
+  -- so this introduces a lag of one line of lyrics.
+  if nowIsStartOfLine() then
     local ratings = Usdx.ScreenSing.GetRating()
     if lowestRatings == nil then
       lowestRatings = ratings
