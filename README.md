@@ -3,7 +3,6 @@ buttplug.io client for UltraStar Deluxe Karaoke Game
 „Plug-in and Sing“
 
 The toy's intensity increases with the player's rating (as indicated with the small bar below the points).
-Due to a detail in the implementation, the intensity lags behind the rating by one line of lyrics.
 
 **For reasons beyond my understanding, the relative imports can only work
 when the plugins folder is the working directory.**

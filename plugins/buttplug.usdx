@@ -6,19 +6,9 @@ The toy's intensity increases with the player's rating (as indicated with the sm
 
 For reasons beyond my understanding, the relative imports can only work
 when the plugins folder is the working directory.
-
-Tested on Ubuntu 22.04 – experience on Windows may vary.
-Tested with one toy only (I only have one).
-
-Depencencies:
-
-* „ultrastardx“ built against lua5.3 (other versions may work)
-* „Intiface Central“ v2.5.5 (newer versions may work) from https://intiface.com/central/
-* „pollnet“ v0.5.1 (newer versions may work) from https://github.com/probable-basilisk/pollnet/releases/tag/v0.5.1
-* „cffi“ 0.2.3 installed via `luarocks-5.3 install cffi-lua` (newer versions may work)
-
-A different ffi module may work. However, changes may be necessary in pollnet.lua.
 ]]
+
+local update_interval_ms = 1000 -- adjust to your linking
 
 function nop()
 end
@@ -34,6 +24,7 @@ function plugin_init()
   Mode.Name = 'Buttplug'
   Mode.CanNonParty = true
   Mode.CanParty = true
+  Mode.BeforeSing = 'BeforeSing'
   Mode.OnSing = 'Sing'
   Mode.AfterSing = 'StopVibrations'
 
@@ -70,39 +61,30 @@ function plugin_init()
   return true
 end
 
--- ScreenSing.GetBeat() is a real value. When floored, it may match
--- the integer start of the note for more than one function call
-local doneLineIndex = 0
-function nowIsStartOfLine()
-  local currentBeatInt = math.floor(ScreenSing.GetBeat())
-  local Lines = ScreenSing.GetSongLines()
-  for i = 1, #Lines do
-    if Lines[i].Start == currentBeatInt and doneLineIndex < currentBeatInt then
-      doneLineIndex = currentBeatInt -- store line index so we know this one is done
-      --print("Line "..i.." starts now")
-      return true
-    end
-  end
-  return false
-end
-
 -- keep track of each player's minimum rating throughout the song
 -- the rating starts with 0.5 by default and I do not want to startle
 -- the player right at the start of the song
 local lowestRatings = nil
 
+function BeforeSing()
+  -- reset ratings
+  -- TODO: find out if this is necessary
+  lowestRatings = nil
+  return true;
+end;
+
+local previous_ms = 0
 function Sing()
   local buttplug = package.loaded.buttplug
   local err = buttplug.get_and_handle_message()
   if err ~= nil then
-    print("buttplug error: no connection to server")
+    print("buttplug error: no connection to server") -- TODO: log via usdx.log
     return true
   end
 
-  -- Change vibration intensity at the start of a line.
-  -- The rating bar for the previous line has not been updated at that time,
-  -- so this introduces a lag of one line of lyrics.
-  if nowIsStartOfLine() then
+  -- Change vibration intensity every update_interval_ms
+  if Usdx.Time() - previous_ms > update_interval_ms then
+    previous_ms = Usdx.Time()
     local ratings = Usdx.ScreenSing.GetRating()
     if lowestRatings == nil then
       lowestRatings = ratings
