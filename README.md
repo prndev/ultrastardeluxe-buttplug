@@ -2,6 +2,8 @@ buttplug.io client for UltraStar Deluxe Karaoke Game
 
 „Plug-in and Sing“
 
+![UltraStar Deluxe Buttplug Logo](https://github.com/prndev/ultrastardeluxe-buttplug/blob/main/ultrastardx-buttplug-icon.svg)
+
 The toy's intensity increases with the player's rating (as indicated with the small bar below the points).
 
 Needs UltraDtar Deluxe v2024.8.0 or newer.  
